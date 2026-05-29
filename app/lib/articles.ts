@@ -37,7 +37,7 @@ function extractExcerpt(md: string, maxLength = 260): string {
         .replace(/\[([^\]]*)\]\(.*?\)/g, "$1") // 链接保留文本（必须在去除 [] 之前）
         .replace(/^#{1,6}\s+/gm, "")          // 去掉标题 #
         .replace(/^>\s+/gm, "")               // 去掉引用 >
-        .replace(/[*_~>#\[\]|]/g, "")         // 去掉残留的 md 符号
+        .replace(/[#|]/g, "")                 // 去掉表格分隔符和残留 #
         .replace(/\s+/g, " ")
         .trim();
 
@@ -83,7 +83,7 @@ function mapPostToArticle(post: ParsedPost): Article {
         id: post.slug,
         title: post.title,
         excerpt: post.excerpt,
-        date: post.date.split("T")[0],
+        date: post.date,
         tags: post.tags,
         readTime: post.readTime,
         status: post.status,
@@ -99,7 +99,7 @@ export async function getArticles(): Promise<Article[]> {
 }
 
 export async function getArticlesById(id: string): Promise<ArticlesDetail | null> {
-    const post = posts.find((p) => p.slug === id);
+    const post = posts.find((p) => p.slug === id && p.status === "published");
     if (!post) return null;
 
     return {
@@ -109,5 +109,5 @@ export async function getArticlesById(id: string): Promise<ArticlesDetail | null
 }
 
 export async function getAllArticleIds(): Promise<string[]> {
-    return posts.map((p) => p.slug);
+    return posts.filter((p) => p.status === "published").map((p) => p.slug);
 }

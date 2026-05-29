@@ -1,11 +1,25 @@
 "use client"
 
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Article } from "../lib/articles";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 
-export default function ArticleList({ articles }: { articles: Article[] }) {
-    const [activeTag, setActiveTag] = useState<string | null>(null);
+export default function ArticleList({ articles, initialTag }: { articles: Article[]; initialTag: string | null }) {
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const activeTag = searchParams.get("tag") ?? initialTag;
+
+    function setActiveTag(tag: string | null) {
+        const params = new URLSearchParams(searchParams.toString());
+        if (tag) {
+            params.set("tag", tag);
+        } else {
+            params.delete("tag");
+        }
+        const qs = params.toString();
+        router.replace(qs ? `/?${qs}` : "/", { scroll: false });
+    }
 
     const filteredArticles = activeTag
         ? articles.filter((article) => article.tags.includes(activeTag))
@@ -32,7 +46,7 @@ export default function ArticleList({ articles }: { articles: Article[] }) {
                             的文章
                         </p>
                         <button
-                            className="text-sm text-gray-500 transition-colors hover:text-gray-900 cursor-pointer"
+                            className="text-sm text-gray-500 transition-colors hover:text-gray-900 cursor-pointer focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2 focus-visible:outline-none rounded"
                             onClick={() => setActiveTag(null)}
                         >
                             清除过滤
@@ -45,7 +59,7 @@ export default function ArticleList({ articles }: { articles: Article[] }) {
                     filteredArticles.map((article) => (
                         <article className="group" key={article.id}>
                             <header className="mb-3">
-                                <Link href={`/article/${article.id}`}>
+                                <Link href={`/article/${article.id}`} className="focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2 focus-visible:outline-none rounded">
                                     <h2 className="mb-2 line-clamp-2 break-all text-2xl font-medium text-gray-900 leading-tight group-hover:text-blue-600 transition-colors">
                                         {article.title}
                                     </h2>
@@ -59,7 +73,7 @@ export default function ArticleList({ articles }: { articles: Article[] }) {
                                         {article.tags.map((tag) => (
                                             <button
                                                 key={tag}
-                                                className="transition-colors hover:text-gray-800"
+                                                className="transition-colors hover:text-gray-800 focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2 focus-visible:outline-none rounded"
                                                 onClick={() => setActiveTag(tag)}
                                             >
                                                 {tag}
@@ -71,7 +85,7 @@ export default function ArticleList({ articles }: { articles: Article[] }) {
                             <p className="mb-3 line-clamp-3 text-gray-600 ">
                                 {article.excerpt}
                             </p>
-                            <Link href={`/article/${article.id}`} className="text-sm text-gray-500 group-hover:border-b hover:text-blue-600 transition-colors">
+                            <Link href={`/article/${article.id}`} className="text-sm text-gray-500 group-hover:border-b hover:text-blue-600 transition-colors focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2 focus-visible:outline-none rounded">
                                 阅读全文
                                 <span className="ml-1">›</span>
                             </Link>
@@ -95,12 +109,12 @@ export default function ArticleList({ articles }: { articles: Article[] }) {
                     <div className="max-h-96 flex flex-wrap gap-2 overflow-y-auto">
                         {sortedTags.map(([tag, count]) => (
                             <button
-                                className={`flex gap-1.5 rounded border border-gray-200 px-2.5 py-1 text-xs transition-colors ${activeTag === tag
+                                className={`flex gap-1.5 rounded border border-gray-200 px-2.5 py-1 text-xs transition-colors focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2 focus-visible:outline-none ${activeTag === tag
                                     ? "bg-gray-900 text-white"
                                     : "bg-white text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                                     }`}
                                 type="button"
-                                onClick={() => setActiveTag((prev) => tag === prev ? null : tag)}
+                                onClick={() => setActiveTag(activeTag === tag ? null : tag)}
                                 key={tag}
                             >
                                 {tag}

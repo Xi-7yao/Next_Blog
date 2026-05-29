@@ -14,10 +14,10 @@ export default function BlogLayout({
                     </h1>
                 </Link>
                 <nav className="flex flex-row gap-5 items-center">
-                    <Link href='/' className="text-base text-gray-500 hover:text-gray-900">
+                    <Link href='/' className="text-base text-gray-500 hover:text-gray-900 focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2 focus-visible:outline-none rounded">
                         首页
                     </Link>
-                    <Link href='/archives' className="text-base text-gray-500 hover:text-gray-900">
+                    <Link href='/archives' className="text-base text-gray-500 hover:text-gray-900 focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2 focus-visible:outline-none rounded">
                         归档
                     </Link>
                 </nav>

@@ -37,6 +37,8 @@ body {
   }
 }
 
-.animate-fade-in {
-  animation: fade-in 420ms ease-out both;
+@media (prefers-reduced-motion: no-preference) {
+  .animate-fade-in {
+    animation: fade-in 300ms ease-out both;
+  }
 }
