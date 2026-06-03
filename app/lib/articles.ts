@@ -1,6 +1,7 @@
 import { readFileSync, readdirSync } from "fs";
 import { join } from "path";
 import matter from "gray-matter";
+import GithubSlugger from "github-slugger";
 
 export interface Article {
     id: string;
@@ -110,4 +111,24 @@ export async function getArticlesById(id: string): Promise<ArticlesDetail | null
 
 export async function getAllArticleIds(): Promise<string[]> {
     return posts.filter((p) => p.status === "published").map((p) => p.slug);
+}
+
+export interface TocItem {
+    id: string;
+    text: string;
+    level: number;
+}
+
+export function extractTocItems(content: string): TocItem[] {
+    // 先移除代码块，避免匹配到代码注释中的 # 行
+    const withoutCodeBlocks = content.replace(/```[\s\S]*?```/g, "");
+    const matches = withoutCodeBlocks.match(/^#{1,2}\s+.+$/gm);
+    if (!matches) return [];
+
+    const slugger = new GithubSlugger();
+    return matches.map((line) => {
+        const level = line.startsWith("## ") ? 2 : 1;
+        const text = line.replace(/^#{1,2}\s+/, "");
+        return { id: slugger.slug(text), text, level };
+    });
 }
