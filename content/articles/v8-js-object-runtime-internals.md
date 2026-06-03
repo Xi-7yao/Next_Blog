@@ -3,6 +3,9 @@ slug: v8-js-object-runtime-internals
 title: V8 JavaScript 对象运行时内存机制解析
 date: 2026-05-07
 tags: [V8, JavaScript, 内存, 运行时]
+series:
+  name: JavaScript 底层探秘
+  order: 1
 readTime: 20 min
 status: published
 ---

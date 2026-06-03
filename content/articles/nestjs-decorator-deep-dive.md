@@ -3,6 +3,9 @@ slug: nestjs-decorator-deep-dive
 title: NestJS 装饰器底层原理系统性解析
 date: 2026-05-06
 tags: [NestJS, TypeScript, 底层原理, 装饰器]
+series:
+  name: JavaScript 底层探秘
+  order: 2
 readTime: 25 min
 status: published
 ---

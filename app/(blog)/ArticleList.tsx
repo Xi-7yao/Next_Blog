@@ -5,7 +5,22 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Article } from "../lib/articles";
 import { useMemo } from "react";
 
-export default function ArticleList({ articles, initialTag }: { articles: Article[]; initialTag: string | null }) {
+interface SeriesData {
+    name: string;
+    articles: Article[];
+}
+
+export default function ArticleList({
+    articles,
+    seriesList,
+    standaloneArticles,
+    initialTag,
+}: {
+    articles: Article[];
+    seriesList: SeriesData[];
+    standaloneArticles: Article[];
+    initialTag: string | null;
+}) {
     const router = useRouter();
     const searchParams = useSearchParams();
     const activeTag = searchParams.get("tag") ?? initialTag;
@@ -21,9 +36,18 @@ export default function ArticleList({ articles, initialTag }: { articles: Articl
         router.replace(qs ? `/?${qs}` : "/", { scroll: false });
     }
 
-    const filteredArticles = activeTag
-        ? articles.filter((article) => article.tags.includes(activeTag))
-        : articles;
+    const filteredStandalone = activeTag
+        ? standaloneArticles.filter((a) => a.tags.includes(activeTag))
+        : standaloneArticles;
+
+    const filteredSeries = activeTag
+        ? seriesList
+            .map((s) => ({
+                ...s,
+                articles: s.articles.filter((a) => a.tags.includes(activeTag)),
+            }))
+            .filter((s) => s.articles.length > 0)
+        : seriesList;
 
     const sortedTags = useMemo(() => {
         const counts = articles.reduce<Record<string, number>>((acc, article) => {
@@ -79,45 +103,78 @@ export default function ArticleList({ articles, initialTag }: { articles: Articl
                         </button>
                     </div>
                 ) : null}
-                {filteredArticles.length === 0 ? (
+                {filteredSeries.length === 0 && filteredStandalone.length === 0 ? (
                     <p className="py-10 text-center text-gray-500">没有找到相关文章。</p>
                 ) : (
-                    filteredArticles.map((article) => (
-                        <article className="group" key={article.id}>
-                            <header className="mb-3">
-                                <Link href={`/article/${article.id}`} className="focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2 focus-visible:outline-none rounded">
-                                    <h2 className="mb-2 line-clamp-2 break-words text-2xl font-medium text-gray-900 leading-tight group-hover:text-slate-700 transition-colors">
-                                        {article.title}
-                                    </h2>
-                                </Link>
-                                <div className="flex flex-row flex-wrap gap-3 text-sm text-gray-500 items-center">
-                                    <time dateTime={article.date}>发布于 {article.date}</time>
-                                    <span>•</span>
-                                    <span>阅读 {article.readTime}</span>
-                                    <span>•</span>
-                                    <div className="flex flex-wrap gap-2">
-                                        {article.tags.map((tag) => (
-                                            <button
-                                                type="button"
-                                                key={tag}
-                                                className="px-1 py-0.5 transition-colors hover:text-gray-800 focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2 focus-visible:outline-none rounded"
-                                                onClick={() => setActiveTag(tag)}
-                                            >
-                                                {tag}
-                                            </button>
-                                        ))}
+                    <>
+                        {filteredSeries.map((series) => (
+                            <section key={series.name} className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+                                <h2 className="mb-4 text-lg font-semibold text-gray-900">
+                                    系列：{series.name}
+                                    <span className="ml-2 text-sm font-normal text-gray-400">
+                                        {series.articles.length} 篇
+                                    </span>
+                                </h2>
+                                <ul className="space-y-3">
+                                    {series.articles.map((article) => (
+                                        <li key={article.id} className="flex flex-row items-baseline gap-4 group/series">
+                                            <span className="shrink-0 text-xs font-medium text-gray-400 tabular-nums w-5 text-right">
+                                                {article.series?.order}
+                                            </span>
+                                            <div className="min-w-0 flex-1">
+                                                <Link
+                                                    href={`/article/${article.id}`}
+                                                    className="text-base text-gray-800 font-medium transition-colors group-hover/series:text-gray-600 focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2 focus-visible:outline-none rounded"
+                                                >
+                                                    {article.title}
+                                                </Link>
+                                                <div className="mt-0.5 flex flex-row flex-wrap gap-2 text-xs text-gray-400">
+                                                    <time dateTime={article.date}>{article.date}</time>
+                                                    <span>· 阅读 {article.readTime}</span>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </section>
+                        ))}
+                        {filteredStandalone.map((article) => (
+                            <article className="group" key={article.id}>
+                                <header className="mb-3">
+                                    <Link href={`/article/${article.id}`} className="focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2 focus-visible:outline-none rounded">
+                                        <h2 className="mb-2 line-clamp-2 break-words text-2xl font-medium text-gray-900 leading-tight group-hover:text-slate-700 transition-colors">
+                                            {article.title}
+                                        </h2>
+                                    </Link>
+                                    <div className="flex flex-row flex-wrap gap-3 text-sm text-gray-500 items-center">
+                                        <time dateTime={article.date}>发布于 {article.date}</time>
+                                        <span>•</span>
+                                        <span>阅读 {article.readTime}</span>
+                                        <span>•</span>
+                                        <div className="flex flex-wrap gap-2">
+                                            {article.tags.map((tag) => (
+                                                <button
+                                                    type="button"
+                                                    key={tag}
+                                                    className="px-1 py-0.5 transition-colors hover:text-gray-800 focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2 focus-visible:outline-none rounded"
+                                                    onClick={() => setActiveTag(tag)}
+                                                >
+                                                    {tag}
+                                                </button>
+                                            ))}
+                                        </div>
                                     </div>
-                                </div>
-                            </header>
-                            <p className="mb-3 line-clamp-3 text-gray-600 ">
-                                {article.excerpt}
-                            </p>
-                            <Link href={`/article/${article.id}`} className="text-sm text-gray-500 group-hover:border-b hover:text-slate-700 transition-colors focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2 focus-visible:outline-none rounded">
-                                阅读全文
-                                <span className="ml-1">›</span>
-                            </Link>
-                        </article>
-                    ))
+                                </header>
+                                <p className="mb-3 line-clamp-3 text-gray-600 ">
+                                    {article.excerpt}
+                                </p>
+                                <Link href={`/article/${article.id}`} className="text-sm text-gray-500 group-hover:border-b hover:text-slate-700 transition-colors focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2 focus-visible:outline-none rounded">
+                                    阅读全文
+                                    <span className="ml-1">›</span>
+                                </Link>
+                            </article>
+                        ))}
+                    </>
                 )}
             </div>
             <div className="hidden md:block w-64 shrink-0">

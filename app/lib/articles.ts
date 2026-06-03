@@ -3,6 +3,11 @@ import { join } from "path";
 import matter from "gray-matter";
 import GithubSlugger from "github-slugger";
 
+export interface ArticleSeries {
+    name: string;
+    order: number;
+}
+
 export interface Article {
     id: string;
     title: string;
@@ -10,6 +15,7 @@ export interface Article {
     date: string;
     tags: string[];
     readTime: string;
+    series?: ArticleSeries;
     status: "published" | "draft";
 }
 
@@ -25,6 +31,7 @@ interface ParsedPost {
     date: string;
     tags: string[];
     readTime: string;
+    series?: ArticleSeries;
     status: "published" | "draft";
     excerpt: string;
     content: string;
@@ -61,12 +68,22 @@ function parsePosts(): ParsedPost[] {
         const rawDate = data.date instanceof Date
             ? data.date.toISOString().split("T")[0]
             : String(data.date ?? "");
+
+        const series =
+            data.series &&
+            typeof data.series === "object" &&
+            typeof data.series.name === "string" &&
+            typeof data.series.order === "number"
+                ? { name: data.series.name, order: data.series.order }
+                : undefined;
+
         const post: ParsedPost = {
             slug: String(data.slug ?? ""),
             title: String(data.title ?? ""),
             date: rawDate,
             tags: Array.isArray(data.tags) ? data.tags.map(String) : [],
             readTime: String(data.readTime ?? ""),
+            series,
             status: data.status === "published" ? "published" : "draft",
             excerpt,
             content: mdContent,
@@ -87,6 +104,7 @@ function mapPostToArticle(post: ParsedPost): Article {
         date: post.date,
         tags: post.tags,
         readTime: post.readTime,
+        ...(post.series ? { series: post.series } : {}),
         status: post.status,
     };
 }
@@ -111,6 +129,40 @@ export async function getArticlesById(id: string): Promise<ArticlesDetail | null
 
 export async function getAllArticleIds(): Promise<string[]> {
     return posts.filter((p) => p.status === "published").map((p) => p.slug);
+}
+
+export async function getSeriesList(): Promise<{ name: string; articles: Article[] }[]> {
+    const published = posts.filter((p) => p.status === "published" && p.series);
+    const map = new Map<string, Article[]>();
+    for (const p of published) {
+        const name = p.series!.name;
+        if (!map.has(name)) map.set(name, []);
+        map.get(name)!.push(mapPostToArticle(p));
+    }
+    for (const articles of map.values()) {
+        articles.sort((a, b) => a.series!.order - b.series!.order);
+    }
+    // 按系列中最新文章日期排序
+    return Array.from(map.entries())
+        .map(([name, articles]) => ({ name, articles }))
+        .sort((a, b) => {
+            const latestA = Math.max(...a.articles.map((x) => new Date(x.date).getTime()));
+            const latestB = Math.max(...b.articles.map((x) => new Date(x.date).getTime()));
+            return latestB - latestA;
+        });
+}
+
+export async function getStandaloneArticles(): Promise<Article[]> {
+    return posts
+        .filter((p) => p.status === "published" && !p.series)
+        .map(mapPostToArticle);
+}
+
+export async function getSeriesArticles(name: string): Promise<Article[]> {
+    return posts
+        .filter((p) => p.status === "published" && p.series?.name === name)
+        .map(mapPostToArticle)
+        .sort((a, b) => a.series!.order - b.series!.order);
 }
 
 export interface TocItem {

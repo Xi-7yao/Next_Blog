@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
-import { getArticlesById, getAllArticleIds, extractTocItems } from "@/app/lib/articles"
+import { getArticlesById, getAllArticleIds, extractTocItems, getSeriesArticles } from "@/app/lib/articles"
 import ArticlePageClient from "./ArticlePageClient"
 
 type Props = {
@@ -43,5 +43,19 @@ export default async function ArticlePage({ params }: Props) {
 
     const tocItems = extractTocItems(article.content)
 
-    return <ArticlePageClient article={article} tocItems={tocItems} />
+    let seriesArticles = null
+    let seriesIndex: number | null = null
+    if (article.series) {
+        seriesArticles = await getSeriesArticles(article.series.name)
+        seriesIndex = seriesArticles.findIndex((a) => a.id === id)
+    }
+
+    return (
+        <ArticlePageClient
+            article={article}
+            tocItems={tocItems}
+            seriesArticles={seriesArticles}
+            seriesIndex={seriesIndex}
+        />
+    )
 }
