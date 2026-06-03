@@ -1,0 +1,28 @@
+services:
+  blog:
+    build: .
+    container_name: blog
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    networks:
+      - blog_net
+
+  nginx:
+    image: nginx:alpine
+    container_name: blog_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - blog
+    networks:
+      - blog_net
+
+networks:
+  blog_net:
+    driver: bridge
